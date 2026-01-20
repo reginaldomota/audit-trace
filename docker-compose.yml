@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: audittrace-postgres
+    environment:
+      POSTGRES_DB: audittrace
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - audittrace-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: audittrace-localstack
+    environment:
+      - SERVICES=sqs
+      - EDGE_PORT=4566
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./scripts:/docker-entrypoint-initaws.d
+    networks:
+      - audittrace-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  init-sqs:
+    image: curlimages/curl:latest
+    container_name: audittrace-init-sqs
+    depends_on:
+      localstack:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts
+    networks:
+      - audittrace-network
+    entrypoint: ["/bin/sh", "/scripts/init-sqs.sh"]
+
+  migrations:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: audittrace-migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    working_dir: /app
+    networks:
+      - audittrace-network
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=audittrace;Username=postgres;Password=postgres"
+    command: >
+      sh -c "
+      dotnet tool install --global dotnet-ef --version 8.0.* || true &&
+      export PATH=\"\$PATH:/root/.dotnet/tools\" &&
+      dotnet build src/Infra/Infra.csproj &&
+      dotnet ef database update --project src/Infra/Infra.csproj
+      "
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: audittrace-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@audittrace.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - audittrace-network
+
+volumes:
+  postgres_data:
+  localstack_data:
+
+networks:
+  audittrace-network:
+    driver: bridge
