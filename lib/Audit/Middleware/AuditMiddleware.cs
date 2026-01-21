@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 
 namespace Audit.Middleware;
 
@@ -59,6 +60,35 @@ public class AuditMiddleware
         {
             stopwatch.Stop();
             
+            var responseBodyText = await ReadResponseBodyAsync(context.Response);
+            
+            // Cria objeto completo com Request e Response para Metadata
+            var metadata = new
+            {
+                Request = new
+                {
+                    Method = context.Request.Method,
+                    Path = context.Request.Path.ToString(),
+                    QueryString = context.Request.QueryString.ToString(),
+                    Headers = context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
+                    Body = requestBody,
+                    ContentType = context.Request.ContentType,
+                    ContentLength = context.Request.ContentLength,
+                    Protocol = context.Request.Protocol,
+                    Scheme = context.Request.Scheme,
+                    Host = context.Request.Host.ToString()
+                },
+                Response = new
+                {
+                    StatusCode = context.Response.StatusCode,
+                    StatusDescription = GetHttpStatusDescription(context.Response.StatusCode),
+                    Headers = context.Response.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()),
+                    Body = responseBodyText,
+                    ContentType = context.Response.ContentType,
+                    ContentLength = context.Response.ContentLength
+                }
+            };
+            
             var auditLog = new AuditLog
             {
                 TraceId = traceId,
@@ -70,7 +100,8 @@ public class AuditMiddleware
                 StatusCodeDescription = GetHttpStatusDescription(context.Response.StatusCode),
                 DurationMs = stopwatch.ElapsedMilliseconds,
                 InputData = requestBody,
-                OutputData = await ReadResponseBodyAsync(context.Response),
+                OutputData = responseBodyText,
+                Metadata = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = false }),
                 UserId = context.User?.Identity?.Name,
                 IpAddress = context.Connection.RemoteIpAddress?.ToString()
             };
