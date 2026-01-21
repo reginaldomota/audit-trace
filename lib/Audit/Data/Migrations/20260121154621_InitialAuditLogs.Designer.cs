@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Audit.Data.Migrations
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20260121140024_AddAuditLogsTable")]
-    partial class AddAuditLogsTable
+    [Migration("20260121154621_InitialAuditLogs")]
+    partial class InitialAuditLogs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,13 +38,16 @@ namespace Audit.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<long>("DurationMs")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("HttpMethod")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                    b.Property<string>("InputData")
+                        .HasColumnType("text");
 
                     b.Property<string>("IpAddress")
                         .HasMaxLength(50)
@@ -53,19 +56,27 @@ namespace Audit.Data.Migrations
                     b.Property<DateTime>("LoggedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("RequestBody")
+                    b.Property<string>("Metadata")
                         .HasColumnType("text");
 
-                    b.Property<string>("RequestPath")
+                    b.Property<string>("Method")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Operation")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<string>("ResponseBody")
+                    b.Property<string>("OutputData")
                         .HasColumnType("text");
 
-                    b.Property<int>("StatusCode")
+                    b.Property<int?>("StatusCode")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StatusCodeDescription")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("TraceId")
                         .IsRequired()
@@ -79,6 +90,8 @@ namespace Audit.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationName");
+
+                    b.HasIndex("Category");
 
                     b.HasIndex("LoggedAt");
 

@@ -26,78 +26,63 @@ namespace Audit.Data.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnOrder(1);
+                        .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ApplicationName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnOrder(2);
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnOrder(5);
+                        .HasColumnType("character varying(50)");
 
                     b.Property<long>("DurationMs")
-                        .HasColumnType("bigint")
-                        .HasColumnOrder(10);
+                        .HasColumnType("bigint");
 
                     b.Property<string>("InputData")
-                        .HasColumnType("text")
-                        .HasColumnOrder(11);
+                        .HasColumnType("text");
 
                     b.Property<string>("IpAddress")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnOrder(15);
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("LoggedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnOrder(4);
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Metadata")
-                        .HasColumnType("text")
-                        .HasColumnOrder(13);
+                        .HasColumnType("text");
 
                     b.Property<string>("Method")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnOrder(6);
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Operation")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnOrder(7);
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("OutputData")
-                        .HasColumnType("text")
-                        .HasColumnOrder(12);
+                        .HasColumnType("text");
 
                     b.Property<int?>("StatusCode")
-                        .HasColumnType("integer")
-                        .HasColumnOrder(9);
+                        .HasColumnType("integer");
 
                     b.Property<string>("StatusCodeDescription")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnOrder(8);
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("TraceId")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnOrder(3);
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("UserId")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnOrder(14);
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
