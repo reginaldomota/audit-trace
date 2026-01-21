@@ -1,6 +1,7 @@
 using Amazon.SQS;
 using Application.Interfaces;
 using Application.Services;
+using Audit.Extensions;
 using Domain.Interfaces;
 using Infra.Data;
 using Infra.Repositories;
@@ -41,6 +42,9 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IQueueService, SqsQueueService>();
 
+// Audit Service
+builder.Services.AddAuditForApi();
+
 // CORS (opcional)
 builder.Services.AddCors(options =>
 {
@@ -62,6 +66,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Middleware de Auditoria
+app.UseAudit();
 
 app.UseCors("AllowAll");
 
