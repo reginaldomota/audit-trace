@@ -43,7 +43,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IQueueService, SqsQueueService>();
 
 // Audit Service
-builder.Services.AddAuditForApi();
+builder.Services.AddAuditForApi(builder.Configuration);
 
 // CORS (opcional)
 builder.Services.AddCors(options =>
@@ -57,6 +57,16 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Run migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    
+    // Migrate ApplicationDbContext
+    var appDbContext = services.GetRequiredService<ApplicationDbContext>();
+    appDbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

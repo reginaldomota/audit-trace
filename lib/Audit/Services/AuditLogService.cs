@@ -1,39 +1,52 @@
 namespace Audit.Services;
 
+using Audit.Configuration;
 using Audit.Interfaces;
 using Audit.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Reflection;
 
 public class AuditLogService : IAuditLogService
 {
     private readonly ILogger<AuditLogService> _logger;
-    private static readonly List<AuditLog> _auditLogs = new(); // Em memória para exemplo
+    private readonly IAuditRepository _auditRepository;
+    private readonly string _applicationName;
 
-    public AuditLogService(ILogger<AuditLogService> logger)
+    public AuditLogService(
+        ILogger<AuditLogService> logger,
+        IAuditRepository auditRepository,
+        IOptions<AuditOptions> options)
     {
         _logger = logger;
+        _auditRepository = auditRepository;
+        
+        // Se não configurado, usa o nome da assembly principal
+        _applicationName = string.IsNullOrWhiteSpace(options.Value.ApplicationName) || options.Value.ApplicationName == "UnknownApp"
+            ? Assembly.GetEntryAssembly()?.GetName().Name ?? "UnknownApp"
+            : options.Value.ApplicationName;
     }
 
-    public Task LogAsync(AuditLog auditLog)
+    public async Task LogAsync(AuditLog auditLog)
     {
+        auditLog.ApplicationName = _applicationName;
+
         _logger.LogInformation(
-            "[AUDIT] TraceId: {TraceId} | {Method} {Path} - Status: {StatusCode} - Duration: {Duration}ms - IP: {IpAddress}",
+            "[AUDIT] App: {ApplicationName} | TraceId: {TraceId} | Category: {Category} | {Method} {Operation} - Status: {StatusCode} - Duration: {Duration}ms - IP: {IpAddress}",
+            auditLog.ApplicationName,
             auditLog.TraceId,
+            auditLog.Category,
             auditLog.Method,
-            auditLog.Path,
+            auditLog.Operation,
             auditLog.StatusCode,
-            auditLog.Duration,
+            auditLog.DurationMs,
             auditLog.IpAddress);
 
-        // Armazena em memória (pode ser substituído por persistência em banco)
-        _auditLogs.Add(auditLog);
-
-        return Task.CompletedTask;
+        await _auditRepository.AddAsync(auditLog);
     }
 
-    public Task<IEnumerable<AuditLog>> GetByTraceIdAsync(string traceId)
+    public async Task<IEnumerable<AuditLog>> GetByTraceIdAsync(string traceId)
     {
-        var logs = _auditLogs.Where(x => x.TraceId == traceId).ToList();
-        return Task.FromResult<IEnumerable<AuditLog>>(logs);
+        return await _auditRepository.GetByTraceIdAsync(traceId);
     }
 }

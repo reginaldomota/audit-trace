@@ -1,22 +1,23 @@
 namespace Audit.Services;
 
 using Audit.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 public class AuditLogProcessor : BackgroundService
 {
     private readonly IAuditQueue _auditQueue;
-    private readonly IAuditLogService _auditLogService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AuditLogProcessor> _logger;
 
     public AuditLogProcessor(
         IAuditQueue auditQueue,
-        IAuditLogService auditLogService,
+        IServiceProvider serviceProvider,
         ILogger<AuditLogProcessor> logger)
     {
         _auditQueue = auditQueue;
-        _auditLogService = auditLogService;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
@@ -32,7 +33,9 @@ public class AuditLogProcessor : BackgroundService
                 
                 if (auditLog != null)
                 {
-                    await _auditLogService.LogAsync(auditLog);
+                    using var scope = _serviceProvider.CreateScope();
+                    var auditLogService = scope.ServiceProvider.GetRequiredService<IAuditLogService>();
+                    await auditLogService.LogAsync(auditLog);
                 }
             }
             catch (OperationCanceledException)

@@ -1,3 +1,5 @@
+using Audit.Constants;
+using Audit.Enums;
 using Audit.Helpers;
 using Audit.Interfaces;
 using Audit.Models;
@@ -60,13 +62,15 @@ public class AuditMiddleware
             var auditLog = new AuditLog
             {
                 TraceId = traceId,
-                Timestamp = DateTime.UtcNow,
+                LoggedAt = DateTime.UtcNow,
+                Category = AuditCategory.HTTP,
+                Operation = context.Request.Path,
                 Method = context.Request.Method,
-                Path = context.Request.Path,
                 StatusCode = context.Response.StatusCode,
-                Duration = stopwatch.ElapsedMilliseconds,
-                RequestBody = requestBody,
-                ResponseBody = await ReadResponseBodyAsync(context.Response),
+                StatusCodeDescription = GetHttpStatusDescription(context.Response.StatusCode),
+                DurationMs = stopwatch.ElapsedMilliseconds,
+                InputData = requestBody,
+                OutputData = await ReadResponseBodyAsync(context.Response),
                 UserId = context.User?.Identity?.Name,
                 IpAddress = context.Connection.RemoteIpAddress?.ToString()
             };
@@ -107,6 +111,28 @@ public class AuditMiddleware
         response.Body.Seek(0, SeekOrigin.Begin);
         
         return string.IsNullOrEmpty(text) ? null : text;
+    }
+
+    private string GetHttpStatusDescription(int statusCode)
+    {
+        return statusCode switch
+        {
+            200 => "OK",
+            201 => "Created",
+            202 => "Accepted",
+            204 => "No Content",
+            400 => "Bad Request",
+            401 => "Unauthorized",
+            403 => "Forbidden",
+            404 => "Not Found",
+            409 => "Conflict",
+            422 => "Unprocessable Entity",
+            500 => "Internal Server Error",
+            502 => "Bad Gateway",
+            503 => "Service Unavailable",
+            504 => "Gateway Timeout",
+            _ => statusCode.ToString()
+        };
     }
 
 }
