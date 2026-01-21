@@ -22,53 +22,68 @@ public class AuditDbContext : DbContext
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.Id)
-                .ValueGeneratedOnAdd();
+                .ValueGeneratedOnAdd()
+                .HasColumnOrder(1);
 
             entity.Property(e => e.ApplicationName)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(100)
+                .HasColumnOrder(2);
 
             entity.Property(e => e.TraceId)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(50)
+                .HasColumnOrder(3);
 
             entity.Property(e => e.LoggedAt)
-                .IsRequired();
+                .IsRequired()
+                .HasColumnOrder(4);
 
             entity.Property(e => e.Category)
                 .IsRequired()
                 .HasConversion<string>()
-                .HasMaxLength(50);
+                .HasMaxLength(50)
+                .HasColumnOrder(5);
+
+            entity.Property(e => e.Method)
+                .HasMaxLength(50)
+                .HasColumnOrder(6);
 
             entity.Property(e => e.Operation)
                 .IsRequired()
-                .HasMaxLength(500);
-
-            entity.Property(e => e.Method)
-                .HasMaxLength(50);
-
-            entity.Property(e => e.StatusCode);
+                .HasMaxLength(500)
+                .HasColumnOrder(7);
 
             entity.Property(e => e.StatusCodeDescription)
-                .HasMaxLength(100);
+                .HasMaxLength(100)
+                .HasColumnOrder(8);
+
+            entity.Property(e => e.StatusCode)
+                .HasColumnOrder(9);
 
             entity.Property(e => e.DurationMs)
-                .IsRequired();
+                .IsRequired()
+                .HasColumnOrder(10);
 
             entity.Property(e => e.InputData)
-                .HasColumnType("text");
+                .HasColumnType("text")
+                .HasColumnOrder(11);
 
             entity.Property(e => e.OutputData)
-                .HasColumnType("text");
-
-            entity.Property(e => e.UserId)
-                .HasMaxLength(100);
-
-            entity.Property(e => e.IpAddress)
-                .HasMaxLength(50);
+                .HasColumnType("text")
+                .HasColumnOrder(12);
 
             entity.Property(e => e.Metadata)
-                .HasColumnType("text");
+                .HasColumnType("text")
+                .HasColumnOrder(13);
+
+            entity.Property(e => e.UserId)
+                .HasMaxLength(100)
+                .HasColumnOrder(14);
+
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50)
+                .HasColumnOrder(15);
 
             // Índices para melhorar performance de consultas
             entity.HasIndex(e => e.TraceId);
