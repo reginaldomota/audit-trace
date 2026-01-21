@@ -20,7 +20,7 @@ public class AuditMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, ITraceContext traceContext, IAuditLogService auditLogService)
+    public async Task InvokeAsync(HttpContext context, ITraceContext traceContext, IAuditQueue auditQueue)
     {
         // Verifica se o traceId foi passado no header
         var traceId = context.Request.Headers["traceId"].FirstOrDefault();
@@ -71,7 +71,8 @@ public class AuditMiddleware
                 IpAddress = context.Connection.RemoteIpAddress?.ToString()
             };
 
-            await auditLogService.LogAsync(auditLog);
+            // Fire-and-forget: enfileira sem bloquear a resposta
+            _ = auditQueue.EnqueueAsync(auditLog);
 
             // Copia o response de volta para o stream original
             responseBody.Seek(0, SeekOrigin.Begin);

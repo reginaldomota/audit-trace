@@ -8,12 +8,14 @@ public static class AuditServiceExtensions
 {
     /// <summary>
     /// Adiciona os serviços de auditoria para projetos API
-    /// Inclui TraceContext e AuditLogService
+    /// Inclui TraceContext, AuditQueue (fila em memória), AuditLogService e AuditLogProcessor (BackgroundService)
     /// </summary>
     public static IServiceCollection AddAuditForApi(this IServiceCollection services)
     {
         services.AddScoped<ITraceContext, TraceContext>();
-        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddSingleton<IAuditQueue, AuditQueue>();
+        services.AddSingleton<IAuditLogService, AuditLogService>();
+        services.AddHostedService<AuditLogProcessor>();
         
         return services;
     }
