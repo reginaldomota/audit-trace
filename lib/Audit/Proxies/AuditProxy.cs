@@ -1,6 +1,7 @@
 using Audit.Attributes;
 using Audit.Constants;
 using Audit.Enums;
+using Audit.Helpers;
 using Audit.Interfaces;
 using Audit.Models;
 using Audit.Services;
@@ -144,7 +145,7 @@ public class AuditProxy<T> : DispatchProxy where T : class
         // Cria o log de auditoria (ApplicationName será definido pelo AuditLogService)
         var auditLog = new AuditLog
         {
-            TraceId = !string.IsNullOrEmpty(_traceContext?.TraceId) ? _traceContext.TraceId : Guid.NewGuid().ToString(),
+            TraceId = !string.IsNullOrEmpty(_traceContext?.TraceId) ? _traceContext.TraceId : TraceIdGenerator.NewTraceId(),
             LoggedAt = DateTime.UtcNow,
             Category = _traceContext?.Category ?? 
                 (!string.IsNullOrEmpty(auditAttribute?.Category) 
