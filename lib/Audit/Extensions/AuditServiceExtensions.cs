@@ -5,6 +5,7 @@ using Audit.Data;
 using Audit.Interfaces;
 using Audit.Repositories;
 using Audit.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,9 @@ public static class AuditServiceExtensions
         
         services.AddDbContext<AuditDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        // HttpContextAccessor para capturar IpAddress e UserId
+        services.AddHttpContextAccessor();
 
         // Serviços
         services.AddScoped<ITraceContext, TraceContext>();
@@ -53,10 +57,15 @@ public static class AuditServiceExtensions
         services.AddDbContext<AuditDbContext>(options =>
             options.UseNpgsql(connectionString));
 
+        // HttpContextAccessor (opcional em Jobs, mas útil se houver)
+        services.AddHttpContextAccessor();
+
         // Serviços
         services.AddScoped<ITraceContext, TraceContext>();
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddSingleton<IAuditQueue, AuditQueue>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddHostedService<AuditLogProcessor>();
         
         return services;
     }

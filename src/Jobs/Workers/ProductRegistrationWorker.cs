@@ -1,6 +1,6 @@
 using Application.Interfaces;
-using Domain.Enums;
-using Domain.Interfaces;
+using Audit.Helpers;
+using Audit.Services;
 
 namespace Jobs.Workers;
 
@@ -41,21 +41,28 @@ public class ProductRegistrationWorker : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var queueService = scope.ServiceProvider.GetRequiredService<IQueueService>();
-        var productRepository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+        var registrationService = scope.ServiceProvider.GetRequiredService<IProductRegistrationService>();
+        var traceContext = scope.ServiceProvider.GetRequiredService<ITraceContext>();
 
         var message = await queueService.ReceiveMessageAsync();
 
         if (message == null)
             return;
 
-        if (Guid.TryParse(message, out var productId))
+        // Configura o TraceContext usando o TraceId da mensagem (enviado pela API)
+        var ctx = (TraceContext)traceContext;
+        ctx.TraceId = message.TraceId ?? TraceIdGenerator.NewTraceId();
+        ctx.Category = Audit.Enums.AuditCategory.Job;
+        ctx.Method = "ProcessProductRegistration";
+
+        try
         {
-            var product = await productRepository.GetByIdAsync(productId);
-            
-            if (product != null && product.Status == ProductStatus.Created)
-            {
-                await productRepository.UpdateStatusAsync(productId, ProductStatus.Registered);
-            }
+            // O serviço com [AuditLog] vai fazer a auditoria automaticamente
+            await registrationService.ProcessProductRegistrationAsync(message);
+        }
+        catch
+        {
+            // Exceções são auditadas automaticamente pelo proxy
         }
     }
 }

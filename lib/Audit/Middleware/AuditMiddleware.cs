@@ -33,7 +33,10 @@ public class AuditMiddleware
             traceId = TraceIdGenerator.NewTraceId();
         
         // Armazena no contexto para ser acessível em toda a aplicação
-        ((TraceContext)traceContext).TraceId = traceId;
+        var ctx = (TraceContext)traceContext;
+        ctx.TraceId = traceId;
+        ctx.Category = AuditCategory.HTTP;
+        ctx.Method = context.Request.Method;
         
         // Adiciona o traceId no response header
         context.Response.OnStarting(() =>
@@ -42,6 +45,7 @@ public class AuditMiddleware
             return Task.CompletedTask;
         });
 
+        var loggedAt = DateTime.UtcNow;
         var stopwatch = Stopwatch.StartNew();
         
         // Captura o request body
@@ -52,9 +56,33 @@ public class AuditMiddleware
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
+        Exception? exception = null;
+
         try
         {
             await _next(context);
+        }
+        catch (Exception ex)
+        {
+            exception = ex;
+            
+            // Se ocorreu uma exceção e o response ainda não foi iniciado,
+            // configura o status code para 500
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/json";
+                
+                var errorResponse = JsonSerializer.Serialize(new
+                {
+                    error = "Internal Server Error",
+                    message = ex.Message,
+                    traceId = traceId
+                });
+                
+                var errorBytes = Encoding.UTF8.GetBytes(errorResponse);
+                await responseBody.WriteAsync(errorBytes, 0, errorBytes.Length);
+            }
         }
         finally
         {
@@ -86,21 +114,28 @@ public class AuditMiddleware
                     Body = responseBodyText,
                     ContentType = context.Response.ContentType,
                     ContentLength = context.Response.ContentLength
-                }
+                },
+                Exception = exception != null ? new
+                {
+                    Message = exception.Message,
+                    StackTrace = exception.StackTrace,
+                    Type = exception.GetType().FullName
+                } : null
             };
             
             var auditLog = new AuditLog
             {
                 TraceId = traceId,
-                LoggedAt = DateTime.UtcNow,
+                LoggedAt = loggedAt,
                 Category = AuditCategory.HTTP,
                 Operation = context.Request.Path,
                 Method = context.Request.Method,
                 StatusCode = context.Response.StatusCode,
                 StatusCodeDescription = HttpStatusCodes.GetDescription(context.Response.StatusCode),
+                HasError = HttpStatusCodes.IsError(context.Response.StatusCode),
                 DurationMs = stopwatch.ElapsedMilliseconds,
-                InputData = requestBody,
-                OutputData = responseBodyText,
+                InputData = SerializeToJson(requestBody),
+                OutputData = SerializeToJson(responseBodyText),
                 Metadata = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = false }),
                 UserId = context.User?.Identity?.Name,
                 IpAddress = context.Connection.RemoteIpAddress?.ToString()
@@ -144,4 +179,22 @@ public class AuditMiddleware
         return string.IsNullOrEmpty(text) ? null : text;
     }
 
+    private string SerializeToJson(string? data)
+    {
+        if (string.IsNullOrEmpty(data))
+            return JsonSerializer.Serialize(new { });
+
+        // Tenta verificar se já é um JSON válido
+        try
+        {
+            using var doc = JsonDocument.Parse(data);
+            // Se parseou com sucesso, já é JSON válido
+            return data;
+        }
+        catch
+        {
+            // Se não é JSON, encapsula em um objeto
+            return JsonSerializer.Serialize(new { raw = data });
+        }
+    }
 }

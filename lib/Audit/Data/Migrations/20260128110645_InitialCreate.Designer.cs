@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Audit.Data.Migrations
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20260121154621_InitialAuditLogs")]
-    partial class InitialAuditLogs
+    [Migration("20260128110645_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,6 +45,9 @@ namespace Audit.Data.Migrations
 
                     b.Property<long>("DurationMs")
                         .HasColumnType("bigint");
+
+                    b.Property<bool>("HasError")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("InputData")
                         .HasColumnType("text");

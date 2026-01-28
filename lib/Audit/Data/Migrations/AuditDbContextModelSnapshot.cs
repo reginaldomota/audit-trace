@@ -43,6 +43,9 @@ namespace Audit.Data.Migrations
                     b.Property<long>("DurationMs")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("HasError")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("InputData")
                         .HasColumnType("text");
 

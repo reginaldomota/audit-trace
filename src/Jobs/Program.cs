@@ -1,5 +1,7 @@
 using Amazon.SQS;
 using Application.Interfaces;
+using Application.Services;
+using Audit.Extensions;
 using Domain.Interfaces;
 using Infra.Data;
 using Infra.Repositories;
@@ -13,6 +15,9 @@ var builder = Host.CreateApplicationBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Audit Configuration
+builder.Services.AddAuditForJobs(builder.Configuration);
 
 // AWS SQS Configuration
 builder.Services.AddSingleton<IAmazonSQS>(sp =>
@@ -29,6 +34,11 @@ builder.Services.AddSingleton<IAmazonSQS>(sp =>
 // Dependency Injection
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IQueueService, SqsQueueService>();
+builder.Services.AddScoped<IProductRegistrationService, ProductRegistrationService>();
+builder.Services.AddScoped<IProductValidationService, ProductValidationService>();
+
+// Habilita proxies automáticos para auditoria
+builder.Services.EnableAuditProxies();
 
 // Register Workers
 builder.Services.AddHostedService<ProductRegistrationWorker>();

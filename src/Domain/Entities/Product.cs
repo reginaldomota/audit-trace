@@ -9,6 +9,7 @@ public class Product : BaseEntity
     public decimal Price { get; set; }
     public int Stock { get; set; }
     public ProductStatus Status { get; set; }
+    public string? TraceId { get; set; }
 
     public Product()
     {

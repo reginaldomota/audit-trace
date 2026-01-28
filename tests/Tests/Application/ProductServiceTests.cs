@@ -1,5 +1,6 @@
 using Application.DTOs;
 using Application.Services;
+using Audit.Services;
 using Domain.Entities;
 using Domain.Interfaces;
 using Moq;
@@ -10,12 +11,15 @@ namespace Tests.Application;
 public class ProductServiceTests
 {
     private readonly Mock<IProductRepository> _mockRepository;
+    private readonly Mock<ITraceContext> _mockTraceContext;
     private readonly ProductService _service;
 
     public ProductServiceTests()
     {
         _mockRepository = new Mock<IProductRepository>();
-        _service = new ProductService(_mockRepository.Object);
+        _mockTraceContext = new Mock<ITraceContext>();
+        _mockTraceContext.Setup(t => t.TraceId).Returns("test-trace-id");
+        _service = new ProductService(_mockRepository.Object, _mockTraceContext.Object);
     }
 
     [Fact]

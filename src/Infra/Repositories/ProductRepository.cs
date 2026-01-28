@@ -1,3 +1,4 @@
+using Audit.Services;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Interfaces;
@@ -8,8 +9,11 @@ namespace Infra.Repositories;
 
 public class ProductRepository : Repository<Product>, IProductRepository
 {
-    public ProductRepository(ApplicationDbContext context) : base(context)
+    private readonly ITraceContext? _traceContext;
+
+    public ProductRepository(ApplicationDbContext context, ITraceContext? traceContext = null) : base(context)
     {
+        _traceContext = traceContext;
     }
 
     public async Task<IEnumerable<Product>> GetByStatusAsync(ProductStatus status)
@@ -29,6 +33,11 @@ public class ProductRepository : Repository<Product>, IProductRepository
         {
             product.Status = status;
             product.UpdatedAt = DateTime.UtcNow;
+            
+            // Atualiza o TraceId automaticamente se disponível
+            if (_traceContext != null && !string.IsNullOrEmpty(_traceContext.TraceId))
+                product.TraceId = _traceContext.TraceId;
+            
             await _context.SaveChangesAsync();
         }
     }

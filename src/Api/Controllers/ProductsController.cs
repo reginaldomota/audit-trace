@@ -1,5 +1,6 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Audit.Services;
 using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,11 +12,16 @@ public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
     private readonly IQueueService _queueService;
+    private readonly ITraceContext _traceContext;
 
-    public ProductsController(IProductService productService, IQueueService queueService)
+    public ProductsController(
+        IProductService productService, 
+        IQueueService queueService,
+        ITraceContext traceContext)
     {
         _productService = productService;
         _queueService = queueService;
+        _traceContext = traceContext;
     }
 
     [HttpGet]
@@ -47,8 +53,8 @@ public class ProductsController : ControllerBase
     {
         var product = await _productService.CreateAsync(dto);
         
-        // Enviar ID do produto para a fila SQS
-        await _queueService.SendMessageAsync(product.Id.ToString());
+        // Enviar ID do produto para a fila SQS com o traceId do contexto
+        await _queueService.SendMessageAsync(product.Id.ToString(), _traceContext.TraceId);
         
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }

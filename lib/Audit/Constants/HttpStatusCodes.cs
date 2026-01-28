@@ -43,4 +43,11 @@ public static class HttpStatusCodes
             _ => statusCode.ToString()
         };
     }
+
+    public static bool IsError(int statusCode)
+    {
+        // Códigos de sucesso: 2xx (Success) e 3xx (Redirection)
+        // Códigos de erro: 4xx (Client Errors) e 5xx (Server Errors)
+        return statusCode >= 400;
+    }
 }

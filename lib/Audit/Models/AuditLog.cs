@@ -11,8 +11,9 @@ public class AuditLog
     public AuditCategory Category { get; set; }
     public string? Method { get; set; }
     public string Operation { get; set; } = string.Empty;
-    public string? StatusCodeDescription { get; set; }
+    public bool HasError { get; set; }
     public int? StatusCode { get; set; }
+    public string? StatusCodeDescription { get; set; }  
     public long DurationMs { get; set; }
     public string? InputData { get; set; }
     public string? OutputData { get; set; }

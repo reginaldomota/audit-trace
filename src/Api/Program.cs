@@ -37,13 +37,16 @@ builder.Services.AddSingleton<IAmazonSQS>(sp =>
     return new AmazonSQSClient(credentials, config);
 });
 
+// Audit Service (registrar ANTES dos serviços de aplicação)
+builder.Services.AddAuditForApi(builder.Configuration);
+
 // Dependency Injection
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IQueueService, SqsQueueService>();
 
-// Audit Service
-builder.Services.AddAuditForApi(builder.Configuration);
+// Habilita proxies automáticos para auditoria (DEVE ser chamado APÓS registrar TODOS os serviços)
+builder.Services.EnableAuditProxies();
 
 // CORS (opcional)
 builder.Services.AddCors(options =>
@@ -75,7 +78,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Desabilitado para desenvolvimento local
 
 // Middleware de Auditoria
 app.UseAudit();

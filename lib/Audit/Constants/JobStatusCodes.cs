@@ -20,4 +20,17 @@ public static class JobStatusCodes
             _ => statusCode.ToString()
         };
     }
+
+    public static bool IsError(int statusCode)
+    {
+        return statusCode switch
+        {
+            Success => false,
+            PartialSuccess => false,
+            Failed => true,
+            Cancelled => true,
+            Timeout => true,
+            _ => true
+        };
+    }
 }

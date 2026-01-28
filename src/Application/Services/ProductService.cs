@@ -1,5 +1,7 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Audit.Attributes;
+using Audit.Services;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Interfaces;
@@ -9,10 +11,12 @@ namespace Application.Services;
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
+    private readonly ITraceContext _traceContext;
 
-    public ProductService(IProductRepository productRepository)
+    public ProductService(IProductRepository productRepository, ITraceContext traceContext)
     {
         _productRepository = productRepository;
+        _traceContext = traceContext;
     }
 
     public async Task<ProductDto?> GetByIdAsync(Guid id)
@@ -32,15 +36,21 @@ public class ProductService : IProductService
         var products = await _productRepository.GetByStatusAsync(status);
         return products.Select(MapToDto);
     }
-
+    
     public async Task<ProductDto> CreateAsync(CreateProductDto dto)
     {
+        // Garante que o TraceId não está vazio
+        var traceId = !string.IsNullOrEmpty(_traceContext.TraceId) 
+            ? _traceContext.TraceId 
+            : null;
+            
         var product = new Product
         {
             Name = dto.Name,
             Description = dto.Description,
             Price = dto.Price,
-            Stock = dto.Stock
+            Stock = dto.Stock,
+            TraceId = traceId // Salva o TraceId do contexto atual
         };
 
         var createdProduct = await _productRepository.AddAsync(product);
@@ -66,6 +76,10 @@ public class ProductService : IProductService
         
         if (dto.Status.HasValue)
             product.Status = dto.Status.Value;
+
+        // Atualiza o TraceId com o contexto atual se disponível
+        if (!string.IsNullOrEmpty(_traceContext.TraceId))
+            product.TraceId = _traceContext.TraceId;
 
         product.UpdatedAt = DateTime.UtcNow;
 

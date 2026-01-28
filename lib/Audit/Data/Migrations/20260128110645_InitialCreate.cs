@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Audit.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialAuditLogs : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,8 +24,9 @@ namespace Audit.Data.Migrations
                     Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Method = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Operation = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    StatusCodeDescription = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    HasError = table.Column<bool>(type: "boolean", nullable: false),
                     StatusCode = table.Column<int>(type: "integer", nullable: true),
+                    StatusCodeDescription = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     DurationMs = table.Column<long>(type: "bigint", nullable: false),
                     InputData = table.Column<string>(type: "text", nullable: true),
                     OutputData = table.Column<string>(type: "text", nullable: true),
