@@ -1,9 +1,11 @@
+using Audit.Attributes;
 using Domain.Entities;
 
 namespace Domain.Interfaces;
 
 public interface IRepository<T> where T : BaseEntity
 {
+    [AuditLog]
     Task<T?> GetByIdAsync(Guid id);
     Task<IEnumerable<T>> GetAllAsync();
     Task<T> AddAsync(T entity);

@@ -44,10 +44,8 @@ public static class AuditProxyExtensions
             if (implementationType == null)
                 continue;
 
-            // Verifica se a INTERFACE tem métodos com [AuditLog]
-            var hasAuditLogMethods = descriptor.ServiceType
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Any(m => m.GetCustomAttribute<AuditLogAttribute>() != null);
+            // Verifica se a INTERFACE ou suas interfaces base têm métodos com [AuditLog]
+            var hasAuditLogMethods = HasAuditLogMethodsInHierarchy(descriptor.ServiceType);
 
             if (!hasAuditLogMethods)
                 continue;
@@ -81,5 +79,25 @@ public static class AuditProxyExtensions
         }
 
         return services;
+    }
+
+    private static bool HasAuditLogMethodsInHierarchy(Type interfaceType)
+    {
+        // Verifica os métodos da interface atual
+        var hasMethods = interfaceType
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Any(m => m.GetCustomAttribute<AuditLogAttribute>() != null);
+
+        if (hasMethods)
+            return true;
+
+        // Verifica recursivamente as interfaces base
+        foreach (var baseInterface in interfaceType.GetInterfaces())
+        {
+            if (HasAuditLogMethodsInHierarchy(baseInterface))
+                return true;
+        }
+
+        return false;
     }
 }
